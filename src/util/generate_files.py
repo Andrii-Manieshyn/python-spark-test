@@ -24,6 +24,6 @@ def generate_logs(file_size=100, regenerate=False):
         click_file = open(path_to_click_log_file, "w")
         click_file.write("%s %s\n" % ("timestamp", "auctionId"))
         for i in range(1, file_size):
-            click_file.write("%s %s\n" % (int(time.time()) + random.randint(-ONE_MONTH_INT, ONE_MONTH_INT), str(uuid.uuid4())[0:8]))
+            click_file.write("%i %s\n" % ( int(time.time()) + random.randint(-ONE_MONTH_INT, ONE_MONTH_INT) , str(uuid.uuid4())[0:8]))
         click_file.close()
 
