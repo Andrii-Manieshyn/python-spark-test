@@ -1,0 +1,34 @@
+from src.spark_pipelines.io_services import *
+from src.spark_pipelines.spark_services import *
+import sys
+
+from src.util.generate_files import generate_impressions, generate_logs
+
+OUTPUT_FOLDER = "../resources/output/result"
+
+IMPRESSION_FILE = "../resources/impression_log.txt"
+CLICK_LOG_FILE = "../resources/click_log.txt"
+
+FIELDS = ["auctionid", "timestamp"]
+
+if __name__== "__main__":
+
+    if len(sys.argv)>1:
+        if sys.argv[1]=='--generate-data':
+            generate_impressions(100000, regenerate=True)
+            generate_logs(10000, regenerate=True)
+
+    clean_target_directory()
+
+    spark = get_spark_session()
+
+    df_impressions = read_df_from_file(spark, IMPRESSION_FILE)
+    df_impressions.show()
+
+    df_click_log = read_df_from_file(spark, CLICK_LOG_FILE)
+    df_click_log.show()
+
+    joined_tables = join_two_df(df_click_log, df_impressions, FIELDS)
+    joined_tables.show()
+
+    write_df_to_csv_file(joined_tables, OUTPUT_FOLDER)
