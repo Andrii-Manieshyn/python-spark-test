@@ -1,46 +1,21 @@
-from pyspark import SparkContext
-from pyspark.sql import SparkSession
-import pandas as pd
-from pyspark import Row
-import os
-import shutil
+from src.spark_pipelines.io_services import *
+from src.spark_pipelines.spark_services import *
 
-SPARK_MASTER = "local[2]"
-APP_NAME = "adTestProject"
+
 
 IMPRESSION_FILE = "../../resources/impression_log.txt"
 CLICK_LOG_FILE = "../../resources/click_log.txt"
 
-IMPRESSION_COLUMNS = ("timestamp", "customerId", "cookie", "auctionId")
-CLICK_LOG_COLUMNS = ("timestamp", "auctionId")
+clean_target_directory()
 
-if (os.path.isdir("../../resources/output/result")):
-    shutil.rmtree("../../resources/output/result")
+spark = get_spark_session()
 
-sc = SparkContext (SPARK_MASTER, APP_NAME)
-spark = SparkSession(sc)
+df_impressions = read_df_from_file(spark, IMPRESSION_FILE)
 
-impresssion_file = sc.textFile(IMPRESSION_FILE)
-click_log_file = sc.textFile(CLICK_LOG_FILE)
+df_click_log=read_df_from_file(spark, CLICK_LOG_FILE)
 
-df_impressions = spark.read.option("header", "true") \
-    .option("delimiter", " ") \
-    .option("inferSchema", "true") \
-    .csv(IMPRESSION_FILE)
+joined_tables=join_two_df(df_click_log, df_impressions, ["auctionid", "timestamp"])
 
-df_impressions.show(truncate=False)
-
-df_click_log=spark.read.option("header", "true") \
-    .option("delimiter", " ") \
-    .option("inferSchema", "true") \
-    .csv(CLICK_LOG_FILE)
-
-df_click_log.show(truncate=False)
-
-#joined_tables = df_click_log.join(df_impressions, df_click_log.auctionId == df_impressions.auctionId)
-joined_tables = df_click_log.join(df_impressions, ["auctionid", "timestamp"], how="left")
-joined_tables.show(truncate=False)
-joined_tables.write.csv("../../resources/output/result", header=True, sep=" ")
-#joined_tables.toPandas().to_csv("../../resources/output/result.csv")
+read_df_to_csv_file(joined_tables, "../../resources/output/result")
 
 
